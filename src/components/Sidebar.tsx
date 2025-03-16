@@ -1,104 +1,113 @@
 
-import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { cn } from '@/lib/utils';
+import React from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { folders } from '@/lib/data';
-import {
-  Folder,
-  FolderOpen,
-  PanelLeft,
-  PanelLeftClose,
-  Upload
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { Folder, Upload, FolderOpen, LayoutDashboard, Users, Building2 } from 'lucide-react';
+import { folders } from '@/lib/data';
 
 interface SidebarProps {
   onUpload: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ onUpload }) => {
-  const navigate = useNavigate();
-  const location = useLocation();
   const { user } = useAuth();
-  const [collapsed, setCollapsed] = useState(false);
-  const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
-
-  if (!user) return null;
-
-  const isAdmin = user.role === 'admin';
-  const isManagement = user.role === 'management';
+  const location = useLocation();
   
-  // Determine which folders the user can access
-  const accessibleFolders = folders.filter(folder => {
-    if (isAdmin || isManagement) return true; // Admin and Management can see all folders
-    return folder.name === user.department; // Employees can only see their department folder
-  });
-
-  // Handle folder click to navigate to department
-  const handleFolderClick = (folderName: string) => {
-    navigate(`/dashboard?department=${folderName}`);
-  };
-
+  if (!user) {
+    return null;
+  }
+  
+  const isAdmin = user.role === 'admin';
+  
   return (
-    <div
-      className={cn(
-        "h-[calc(100vh-4rem)] border-r bg-sidebar transition-all duration-300 relative",
-        collapsed ? "w-16" : "w-64"
-      )}
-    >
-      <div className="p-4 h-full flex flex-col">
-        <div className="flex items-center justify-between mb-6">
-          {!collapsed && <h2 className="text-lg font-medium">Documents</h2>}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setCollapsed(!collapsed)}
-            className="ml-auto"
+    <div className="sidebar-container border-r w-64 h-[calc(100vh-4rem)] flex-shrink-0 hidden md:block">
+      <div className="flex flex-col h-full">
+        <div className="px-4 py-4">
+          <Button 
+            onClick={onUpload} 
+            className="w-full justify-start gap-2"
           >
-            {collapsed ? (
-              <PanelLeft className="h-5 w-5" />
-            ) : (
-              <PanelLeftClose className="h-5 w-5" />
-            )}
+            <Upload className="h-4 w-4" />
+            Upload Document
           </Button>
         </div>
-
-        <Button
-          onClick={onUpload}
-          className={cn(
-            "mb-4 w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90",
-            collapsed ? "px-2" : ""
-          )}
-        >
-          <Upload className="h-4 w-4" />
-          {!collapsed && <span>Upload Document</span>}
-        </Button>
-
-        <Separator className="my-4" />
-
-        <ScrollArea className="flex-grow">
-          <div className="space-y-1 pr-2">
-            {accessibleFolders.map(folder => (
-              <Button
-                key={folder.id}
-                variant="ghost"
-                className="w-full flex items-center justify-start px-2"
-                onClick={() => handleFolderClick(folder.name)}
-              >
-                <div className="flex items-center gap-2">
-                  <FolderOpen className="h-4 w-4 text-primary" />
-                  {!collapsed && <span>{folder.name}</span>}
-                </div>
-              </Button>
-            ))}
+        
+        <ScrollArea className="flex-1">
+          <div className="space-y-1 px-2">
+            <NavLink
+              to="/dashboard"
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors",
+                  isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground"
+                )
+              }
+            >
+              <LayoutDashboard className="h-4 w-4" />
+              Dashboard
+            </NavLink>
+            
+            {isAdmin && (
+              <>
+                <NavLink
+                  to="/user-management"
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors",
+                      isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground"
+                    )
+                  }
+                >
+                  <Users className="h-4 w-4" />
+                  User Management
+                </NavLink>
+                
+                <NavLink
+                  to="/unit-management"
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors",
+                      isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground"
+                    )
+                  }
+                >
+                  <Building2 className="h-4 w-4" />
+                  Department Management
+                </NavLink>
+              </>
+            )}
+            
+            <div className="mt-6">
+              <h3 className="px-3 text-xs font-semibold text-foreground mb-2">
+                Departments
+              </h3>
+              <div className="space-y-1">
+                {folders.map((folder) => (
+                  <NavLink
+                    key={folder.id}
+                    to={`/dashboard?department=${folder.name}`}
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors",
+                        (isActive || location.search === `?department=${folder.name}`) 
+                          ? "bg-accent text-accent-foreground" 
+                          : "text-muted-foreground"
+                      )
+                    }
+                  >
+                    {location.search === `?department=${folder.name}` ? (
+                      <FolderOpen className="h-4 w-4" />
+                    ) : (
+                      <Folder className="h-4 w-4" />
+                    )}
+                    {folder.name}
+                  </NavLink>
+                ))}
+              </div>
+            </div>
           </div>
         </ScrollArea>
       </div>

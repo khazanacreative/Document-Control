@@ -252,6 +252,23 @@ export const addDepartment = (departmentName: string): Folder => {
   return newFolder;
 };
 
+export const deleteDepartment = (departmentId: string): boolean => {
+  const index = folders.findIndex(folder => folder.id === departmentId);
+  
+  if (index >= 0) {
+    // Check if department has documents
+    if (folders[index].documents.length > 0) {
+      throw new Error(`Cannot delete department with documents`);
+    }
+    
+    folders.splice(index, 1);
+    saveToLocalStorage();
+    return true;
+  }
+  
+  return false;
+};
+
 export const addDocument = (document: Omit<Document, 'id'>): Document => {
   const newDocument = {
     ...document,
