@@ -1,4 +1,3 @@
-
 export type UserRole = 'admin' | 'management' | 'employee';
 export type Department = 'HR' | 'Finance' | 'IT' | 'Marketing' | 'Operations';
 
@@ -234,6 +233,23 @@ export const addUser = (user: Omit<User, 'id'>): User => {
   users.push(newUser);
   saveToLocalStorage();
   return newUser;
+};
+
+export const addDepartment = (departmentName: string): Folder => {
+  // Check if department already exists
+  if (folders.some(folder => folder.name === departmentName)) {
+    throw new Error(`Department ${departmentName} already exists`);
+  }
+  
+  const newFolder: Folder = {
+    id: (folders.length + 1).toString(),
+    name: departmentName as Department,
+    documents: []
+  };
+  
+  folders.push(newFolder);
+  saveToLocalStorage();
+  return newFolder;
 };
 
 export const addDocument = (document: Omit<Document, 'id'>): Document => {

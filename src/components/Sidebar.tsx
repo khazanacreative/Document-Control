@@ -5,8 +5,6 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { folders } from '@/lib/data';
 import {
-  ChevronDown,
-  ChevronRight,
   Folder,
   FolderOpen,
   PanelLeft,
@@ -38,19 +36,16 @@ const Sidebar: React.FC<SidebarProps> = ({ onUpload }) => {
   const isAdmin = user.role === 'admin';
   const isManagement = user.role === 'management';
   
-  // Toggle folder open/closed state
-  const toggleFolder = (folderId: string) => {
-    setOpenFolders(prev => ({
-      ...prev,
-      [folderId]: !prev[folderId]
-    }));
-  };
-
   // Determine which folders the user can access
   const accessibleFolders = folders.filter(folder => {
     if (isAdmin || isManagement) return true; // Admin and Management can see all folders
     return folder.name === user.department; // Employees can only see their department folder
   });
+
+  // Handle folder click to navigate to department
+  const handleFolderClick = (folderName: string) => {
+    navigate(`/dashboard?department=${folderName}`);
+  };
 
   return (
     <div
@@ -92,49 +87,17 @@ const Sidebar: React.FC<SidebarProps> = ({ onUpload }) => {
         <ScrollArea className="flex-grow">
           <div className="space-y-1 pr-2">
             {accessibleFolders.map(folder => (
-              <div key={folder.id} className="overflow-hidden animate-enter">
-                <Collapsible
-                  open={openFolders[folder.id]}
-                  onOpenChange={() => toggleFolder(folder.id)}
-                >
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className={cn(
-                        "w-full flex items-center justify-between px-2",
-                        openFolders[folder.id] ? "bg-accent/50" : ""
-                      )}
-                    >
-                      <div className="flex items-center gap-2">
-                        {openFolders[folder.id] ? (
-                          <FolderOpen className="h-4 w-4 text-primary" />
-                        ) : (
-                          <Folder className="h-4 w-4 text-primary" />
-                        )}
-                        {!collapsed && <span>{folder.name}</span>}
-                      </div>
-                      {!collapsed && (
-                        openFolders[folder.id] ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )
-                      )}
-                    </Button>
-                  </CollapsibleTrigger>
-                  {!collapsed && (
-                    <CollapsibleContent className="pl-4 pr-2 py-2 space-y-1">
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-start text-sm"
-                        onClick={() => navigate(`/folder/${folder.name}`)}
-                      >
-                        View All
-                      </Button>
-                    </CollapsibleContent>
-                  )}
-                </Collapsible>
-              </div>
+              <Button
+                key={folder.id}
+                variant="ghost"
+                className="w-full flex items-center justify-start px-2"
+                onClick={() => handleFolderClick(folder.name)}
+              >
+                <div className="flex items-center gap-2">
+                  <FolderOpen className="h-4 w-4 text-primary" />
+                  {!collapsed && <span>{folder.name}</span>}
+                </div>
+              </Button>
             ))}
           </div>
         </ScrollArea>

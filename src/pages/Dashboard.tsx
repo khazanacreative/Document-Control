@@ -1,12 +1,14 @@
 
-import React, { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
 import UploadModal from '@/components/UploadModal';
 import ApprovalModal from '@/components/ApprovalModal';
 import DocumentCard from '@/components/DocumentCard';
 import FolderView from '@/components/FolderView';
+import AddUserModal from '@/components/AddUserModal';
+import AddDepartmentModal from '@/components/AddDepartmentModal';
 import { useAuth } from '@/context/AuthContext';
 import { useDocuments } from '@/context/DocumentContext';
 import { Department, folders } from '@/lib/data';
@@ -15,7 +17,8 @@ import {
   Clock,
   PlusCircle,
   Search,
-  UserPlus
+  UserPlus,
+  FolderPlus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,7 +34,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { department } = useParams<{ department?: string }>();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const departmentParam = searchParams.get('department') as Department | null;
+  
   const { user } = useAuth();
   const {
     getAllDocuments,
@@ -42,6 +48,8 @@ const Dashboard = () => {
   } = useDocuments();
   
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [isAddDepartmentModalOpen, setIsAddDepartmentModalOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<any>(null);
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -56,7 +64,6 @@ const Dashboard = () => {
   // Filter documents based on user role and department
   const allDocuments = getAllDocuments().filter(doc => canViewDocument(doc));
   const userDocuments = getUserDocuments(user.id);
-  const departmentDocuments = getDepartmentDocuments(user.department);
   
   // Apply search filter
   const filterDocuments = (docs: any[]) => {
@@ -67,6 +74,11 @@ const Dashboard = () => {
       doc.department.toLowerCase().includes(query)
     );
   };
+  
+  // Get department documents if department is selected
+  const departmentDocuments = departmentParam 
+    ? getDepartmentDocuments(departmentParam as Department)
+    : getDepartmentDocuments(user.department);
   
   const filteredAll = filterDocuments(allDocuments);
   const filteredUser = filterDocuments(userDocuments);
@@ -80,11 +92,8 @@ const Dashboard = () => {
   
   // Determine which view to display
   const renderMainContent = () => {
-    if (department) {
-      const selectedDept = folders.find(f => f.name === department);
-      if (selectedDept) {
-        return <FolderView department={selectedDept.name as Department} />;
-      }
+    if (departmentParam) {
+      return <FolderView department={departmentParam as Department} />;
     }
     
     return (
@@ -101,10 +110,16 @@ const Dashboard = () => {
               
               <div className="flex gap-2">
                 {isAdmin && (
-                  <Button onClick={() => navigate('/users')} className="flex items-center gap-1.5">
-                    <UserPlus className="h-4 w-4" />
-                    Add User
-                  </Button>
+                  <>
+                    <Button onClick={() => setIsAddUserModalOpen(true)} className="flex items-center gap-1.5">
+                      <UserPlus className="h-4 w-4" />
+                      Add User
+                    </Button>
+                    <Button onClick={() => setIsAddDepartmentModalOpen(true)} className="flex items-center gap-1.5">
+                      <FolderPlus className="h-4 w-4" />
+                      Add Department
+                    </Button>
+                  </>
                 )}
                 <Button onClick={() => setIsUploadModalOpen(true)} className="flex items-center gap-1.5">
                   <PlusCircle className="h-4 w-4" />
@@ -128,7 +143,7 @@ const Dashboard = () => {
             <Tabs defaultValue="all" className="w-full">
               <TabsList className="w-full justify-start mb-4">
                 <TabsTrigger value="all">All Documents</TabsTrigger>
-                <TabsTrigger value="department">{user.department}</TabsTrigger>
+                <TabsTrigger value="department">{departmentParam || user.department}</TabsTrigger>
                 <TabsTrigger value="my">My Uploads</TabsTrigger>
                 {(isAdmin || isManagement) && (
                   <TabsTrigger value="pending" className="relative">
@@ -244,6 +259,16 @@ const Dashboard = () => {
           setIsApprovalModalOpen(false);
           setSelectedDocument(null);
         }}
+      />
+
+      <AddUserModal
+        isOpen={isAddUserModalOpen}
+        onClose={() => setIsAddUserModalOpen(false)}
+      />
+
+      <AddDepartmentModal
+        isOpen={isAddDepartmentModalOpen}
+        onClose={() => setIsAddDepartmentModalOpen(false)}
       />
     </div>
   );
