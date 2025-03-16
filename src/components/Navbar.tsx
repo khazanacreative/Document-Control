@@ -10,7 +10,7 @@ import {
   ChevronDown,
   Lock,
   Settings,
-  User
+  Users
 } from 'lucide-react';
 import { 
   DropdownMenu,
@@ -78,9 +78,14 @@ const Navbar: React.FC = () => {
           </Button>
           
           {user.role === 'admin' && (
-            <Button variant="ghost" className="justify-start md:justify-center" onClick={() => navigate('/users')}>
-              User Management
-            </Button>
+            <>
+              <Button variant="ghost" className="justify-start md:justify-center" onClick={() => navigate('/user-management')}>
+                User Management
+              </Button>
+              <Button variant="ghost" className="justify-start md:justify-center" onClick={() => navigate('/unit-management')}>
+                Department Management
+              </Button>
+            </>
           )}
         </nav>
 

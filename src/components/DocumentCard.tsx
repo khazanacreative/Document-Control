@@ -47,13 +47,26 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
   document,
   className,
 }) => {
-  const { canEditDocument, canApproveDocument, approveDocument, rejectDocument, deleteDocument } = useDocuments();
+  const { canViewDocument, approveDocument, rejectDocument, deleteDocument } = useDocuments();
   const { user } = useAuth();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [documentName, setDocumentName] = useState(document.name);
   
   const uploader = getUserById(document.uploadedBy);
   const approver = document.approvedBy ? getUserById(document.approvedBy) : null;
+  
+  // Determine if the current user can edit this document
+  const canEdit = user && (
+    user.role === 'admin' || 
+    (user.role === 'management' && user.department === document.department) ||
+    document.uploadedBy === user.id
+  );
+  
+  // Determine if the current user can approve this document
+  const canApprove = user && (
+    user.role === 'admin' || 
+    (user.role === 'management' && user.department === document.department)
+  ) && document.status === 'pending';
   
   const getFileIcon = (type: string) => {
     if (type.includes('spreadsheet') || type.includes('excel') || type.includes('csv')) {
@@ -125,9 +138,8 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
   
   if (!user || !uploader) return null;
   
-  const canEdit = canEditDocument(document);
-  const canApprove = canApproveDocument(document) && document.status === 'pending';
-  const isManagement = user.role === 'management' || user.role === 'admin';
+  // Check if the user can view this document
+  if (!canViewDocument(document)) return null;
 
   return (
     <>
@@ -183,7 +195,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
               <Download className="h-4 w-4" />
             </Button>
             
-            {(canEdit || canApprove || isManagement) && (
+            {(canEdit || canApprove) && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -205,7 +217,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
                     </>
                   )}
                   
-                  {(canEdit || isManagement) && (
+                  {canEdit && (
                     <>
                       <DropdownMenuItem onClick={() => {
                         setDocumentName(document.name);

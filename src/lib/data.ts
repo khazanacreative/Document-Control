@@ -235,6 +235,38 @@ export const addUser = (user: Omit<User, 'id'>): User => {
   return newUser;
 };
 
+export const deleteUser = (userId: string): boolean => {
+  const index = users.findIndex(user => user.id === userId);
+  
+  if (index >= 0) {
+    // Don't allow deleting the last admin
+    if (
+      users[index].role === 'admin' && 
+      users.filter(u => u.role === 'admin').length <= 1
+    ) {
+      throw new Error('Cannot delete the last admin user');
+    }
+    
+    users.splice(index, 1);
+    saveToLocalStorage();
+    return true;
+  }
+  
+  return false;
+};
+
+export const resetUserPassword = (userId: string, newPassword: string): boolean => {
+  const user = users.find(user => user.id === userId);
+  
+  if (user) {
+    user.password = newPassword;
+    saveToLocalStorage();
+    return true;
+  }
+  
+  return false;
+};
+
 export const addDepartment = (departmentName: string): Folder => {
   // Check if department already exists
   if (folders.some(folder => folder.name === departmentName)) {
@@ -335,6 +367,22 @@ export const deleteDocument = (id: string): boolean => {
   }
   
   return false;
+};
+
+// Update the canEditDocument function to limit editors to their own department
+export const canEditDocument = (document: Document, currentUser: User): boolean => {
+  if (!currentUser) return false;
+  
+  // Admin can edit all documents
+  if (currentUser.role === 'admin') return true;
+  
+  // Management can only edit documents in their department
+  if (currentUser.role === 'management') {
+    return currentUser.department === document.department;
+  }
+  
+  // Employees can only edit their own documents
+  return document.uploadedBy === currentUser.id;
 };
 
 // Initialize data on import

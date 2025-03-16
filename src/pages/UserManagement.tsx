@@ -1,11 +1,12 @@
 
 import React, { useState } from 'react';
-import { users, User } from '@/lib/data';
+import { users, User, deleteUser, resetUserPassword } from '@/lib/data';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
 import AddUserModal from '@/components/AddUserModal';
+import ResetPasswordModal from '@/components/ResetPasswordModal';
 import { useAuth } from '@/context/AuthContext';
-import { PlusCircle, Search, UserPlus, Users } from 'lucide-react';
+import { PlusCircle, Search, UserPlus, Users, Trash, Key } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -27,12 +28,25 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const UserManagement = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
   if (!user || user.role !== 'admin') {
     // Redirect non-admin users
@@ -50,6 +64,28 @@ const UserManagement = () => {
       user.department.toLowerCase().includes(query)
     );
   });
+  
+  const handleDeleteUser = () => {
+    if (selectedUser) {
+      if (deleteUser(selectedUser.id)) {
+        toast.success(`User ${selectedUser.name} deleted successfully`);
+      } else {
+        toast.error('Failed to delete user');
+      }
+      setIsDeleteDialogOpen(false);
+      setSelectedUser(null);
+    }
+  };
+
+  const handleResetPassword = (userId: string, newPassword: string) => {
+    if (resetUserPassword(userId, newPassword)) {
+      toast.success('Password reset successfully');
+      setIsResetPasswordModalOpen(false);
+      setSelectedUser(null);
+    } else {
+      toast.error('Failed to reset password');
+    }
+  };
   
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
@@ -114,34 +150,63 @@ const UserManagement = () => {
                       <TableHead>Username</TableHead>
                       <TableHead>Role</TableHead>
                       <TableHead>Department</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredUsers.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
+                        <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
                           No users found
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredUsers.map((user: User) => (
-                        <TableRow key={user.id} className="animate-enter">
+                      filteredUsers.map((userItem: User) => (
+                        <TableRow key={userItem.id} className="animate-enter">
                           <TableCell className="font-medium">
                             <div className="flex items-center gap-2">
                               <Avatar className="h-8 w-8">
-                                <AvatarImage src={user.avatar} />
-                                <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                                <AvatarImage src={userItem.avatar} />
+                                <AvatarFallback>{userItem.name.charAt(0)}</AvatarFallback>
                               </Avatar>
-                              <span>{user.name}</span>
+                              <span>{userItem.name}</span>
                             </div>
                           </TableCell>
-                          <TableCell>{user.username}</TableCell>
+                          <TableCell>{userItem.username}</TableCell>
                           <TableCell>
-                            <Badge className={getRoleBadgeColor(user.role)}>
-                              {user.role}
+                            <Badge className={getRoleBadgeColor(userItem.role)}>
+                              {userItem.role}
                             </Badge>
                           </TableCell>
-                          <TableCell>{user.department}</TableCell>
+                          <TableCell>{userItem.department}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => {
+                                  setSelectedUser(userItem);
+                                  setIsResetPasswordModalOpen(true);
+                                }}
+                                title="Reset Password"
+                              >
+                                <Key className="h-4 w-4" />
+                              </Button>
+                              
+                              <Button
+                                variant="destructive"
+                                size="icon"
+                                onClick={() => {
+                                  setSelectedUser(userItem);
+                                  setIsDeleteDialogOpen(true);
+                                }}
+                                title="Delete User"
+                                disabled={userItem.id === user.id} // Prevent deleting own account
+                              >
+                                <Trash className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
                         </TableRow>
                       ))
                     )}
@@ -157,6 +222,39 @@ const UserManagement = () => {
         isOpen={isAddUserModalOpen}
         onClose={() => setIsAddUserModalOpen(false)}
       />
+
+      {selectedUser && (
+        <ResetPasswordModal
+          isOpen={isResetPasswordModalOpen}
+          onClose={() => {
+            setIsResetPasswordModalOpen(false);
+            setSelectedUser(null);
+          }}
+          user={selectedUser}
+          onReset={handleResetPassword}
+        />
+      )}
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the user account for {selectedUser?.name}. 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSelectedUser(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteUser}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
