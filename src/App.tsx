@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
 import UserManagement from "./pages/UserManagement";
 import UnitManagement from "./pages/UnitManagement";
+import Approvals from "./pages/Approvals";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/dashboard/approvals" element={<Approvals />} />
               <Route path="/user-management" element={<UserManagement />} />
               <Route path="/unit-management" element={<UnitManagement />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
