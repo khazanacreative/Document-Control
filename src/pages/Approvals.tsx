@@ -28,7 +28,7 @@ const Approvals = () => {
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <div className="flex flex-1 overflow-hidden">
-          <Sidebar />
+          <Sidebar onUpload={() => {}} />
           <main className="flex-1 overflow-auto p-6">
             <Card>
               <CardHeader>
@@ -53,7 +53,7 @@ const Approvals = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
+        <Sidebar onUpload={() => {}} />
         <main className="flex-1 overflow-auto p-6">
           <Card>
             <CardHeader className="pb-3">
